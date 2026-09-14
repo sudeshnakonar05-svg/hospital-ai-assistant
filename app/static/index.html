@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulsePoint CareOS - Clinical & Health Intelligence Platform</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Top Navigation Header (Replaces legacy left sidebar) -->
+  <header class="top-nav-bar">
+    <div class="top-nav-inner">
+      <!-- Brand & Identity -->
+      <a href="/ui/index.html" class="brand-section">
+        <div class="brand-icon-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title-row">
+            <span class="brand-title">PulsePoint</span>
+            <span class="brand-badge">CareOS</span>
+          </div>
+          <span class="brand-tagline">Clinical & Care Intelligence</span>
+        </div>
+      </a>
+
+      <!-- Horizontal Navigation Tabs -->
+      <nav class="nav-pill-group">
+        <button class="nav-item active" data-view="assistant">
+          <span class="nav-icon">💬</span>
+          <span class="nav-label">AI Assistant</span>
+        </button>
+        <button class="nav-item" data-view="appointments">
+          <span class="nav-icon">📅</span>
+          <span class="nav-label">Appointments</span>
+        </button>
+        <button class="nav-item" data-view="directory">
+          <span class="nav-icon">🏥</span>
+          <span class="nav-label">Care Team & Depts</span>
+        </button>
+        <button class="nav-item" data-view="patients" data-roles="admin,staff">
+          <span class="nav-icon">👥</span>
+          <span class="nav-label">Patient Records</span>
+        </button>
+        <button class="nav-item" data-view="knowledge" data-roles="admin,staff">
+          <span class="nav-icon">📚</span>
+          <span class="nav-label">Knowledge Hub</span>
+        </button>
+      </nav>
+
+      <!-- Right Header Actions -->
+      <div class="top-nav-right">
+        <div class="live-status-pill">
+          <span class="status-dot-pulse"></span>
+          <span>AI Engine Active</span>
+        </div>
+        <a href="/docs" target="_blank" class="api-docs-btn">
+          <span>📖</span>
+          <span>API Docs</span>
+        </a>
+
+        <!-- Authenticated Profile Widget -->
+        <div id="userProfileWidget" class="user-profile-widget" style="display: none;">
+          <div class="user-details">
+            <span id="userEmailLabel" class="user-email-text">user@pulsepoint.health</span>
+            <span id="userRoleBadge" class="role-pill role-admin">ADMIN</span>
+          </div>
+          <button id="logoutBtn" class="btn btn-outline btn-sm">Sign Out</button>
+        </div>
+
+        <!-- Guest Sign In Trigger -->
+        <button id="loginModalBtn" class="btn btn-primary btn-sm">Sign In / Demo Access</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- KPI / Platform Status Ribbon -->
+  <section class="kpi-ribbon">
+    <div class="kpi-card">
+      <div class="kpi-icon-badge kpi-blue">⚡</div>
+      <div class="kpi-content">
+        <span class="kpi-label">Clinical Engine</span>
+        <span class="kpi-value">Dense Vector RAG</span>
+        <span class="kpi-subtext">FAISS 384-dim semantic index</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-badge kpi-teal">🏥</div>
+      <div class="kpi-content">
+        <span class="kpi-label">Care Network</span>
+        <span class="kpi-value">Specialists & Depts</span>
+        <span class="kpi-subtext">Verified medical directory</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-badge kpi-indigo">📅</div>
+      <div class="kpi-content">
+        <span class="kpi-label">Scheduling</span>
+        <span class="kpi-value">Real-Time Booking</span>
+        <span class="kpi-subtext">Conflict-guarded appointments</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-badge kpi-purple">🛡️</div>
+      <div class="kpi-content">
+        <span class="kpi-label">Safety Guard</span>
+        <span class="kpi-value">Triage Interceptor</span>
+        <span class="kpi-subtext">Active 911 emergency redirect</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Application Workspace -->
+  <main class="app-workspace">
+    <div class="workspace-header">
+      <div class="workspace-title-area">
+        <h2 id="viewTitle">AI Knowledge Assistant</h2>
+        <p id="authStatusIndicator">Guest Mode (Sign in for appointments and full medical records)</p>
+      </div>
+    </div>
+
+    <!-- PANEL 1: AI Clinical Knowledge Assistant (RAG Chat) -->
+    <section id="panel-assistant" class="view-panel active">
+      <div class="chat-workspace-grid">
+        <!-- Interactive Chat Card -->
+        <div class="chat-card">
+          <div class="chat-top-header">
+            <div class="chat-engine-badge">
+              <div>
+                <strong>PulsePoint Clinical Intelligence Assistant</strong>
+                <p>Answers strictly grounded in verified clinical protocols and hospital policies</p>
+              </div>
+            </div>
+            <div class="mode-toggle-group">
+              <label for="modeSelect">Engine Mode:</label>
+              <select id="modeSelect">
+                <option value="retrieval_only" selected>Dense Retrieval (Local)</option>
+                <option value="groq">Groq Cloud LLM</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Prompt Suggestions Bar -->
+          <div class="chip-bar">
+            <button class="prompt-chip" data-query="What time does the hospital open?">🕒 Hospital Hours</button>
+            <button class="prompt-chip" data-query="Where is the emergency department?">🚑 Emergency Wing</button>
+            <button class="prompt-chip" data-query="Can I book an appointment by phone?">📞 Phone Booking</button>
+            <button class="prompt-chip" data-query="What are the general visiting hours?">🕒 Visiting Hours</button>
+            <button class="prompt-chip" data-query="Can I visit someone in the ICU?">🏥 ICU Visiting</button>
+            <button class="prompt-chip" data-query="Does the hospital have an MRI?">🔬 MRI Availability</button>
+            <button class="prompt-chip" data-query="Does the hospital have a CT scanner?">🔬 CT Scanner</button>
+            <button class="prompt-chip" data-query="Is there a pharmacy inside the hospital?">💊 Pharmacy</button>
+            <button class="prompt-chip" data-query="How many beds does the hospital have?">🛏️ Hospital Capacity</button>
+            <button class="prompt-chip" data-query="Does the hospital have an ICU?">🏥 ICU Beds</button>
+            <button class="prompt-chip" data-query="Does the hospital have a pediatric department?">👶 Pediatrics</button>
+            <button class="prompt-chip" data-query="Does the hospital provide maternity services?">🤱 Maternity</button>
+            <button class="prompt-chip" data-query="How can I get my medical records?">📄 Medical Records</button>
+            <button class="prompt-chip" data-query="Can I view laboratory reports online?">🧪 Lab Reports</button>
+          </div>
+
+          <!-- Chat Conversation History Pane -->
+          <div id="chatMessagesPane" class="messages-pane">
+            <div class="msg-bubble msg-assistant">
+              <strong>PulsePoint Assistant</strong>
+              Welcome to PulsePoint CareOS. I can assist you with clinical departments, provider schedules, hospital protocols, visiting hours, or appointment bookings. For emergencies, immediate clinical safety triage guidance is active.
+            </div>
+          </div>
+
+          <!-- Chat Input Controls -->
+          <div class="chat-input-wrapper">
+            <textarea
+              id="chatQuestionInput"
+              placeholder="Ask a question about medical departments, clinic hours, or hospital guidelines..."
+            ></textarea>
+            <button id="chatSendBtn" class="btn btn-primary" style="height: 52px; padding: 0 1.5rem;">
+              Send Query
+            </button>
+          </div>
+        </div>
+
+        <!-- Real-Time Evidence & Citations Card -->
+        <div class="sources-card">
+          <div class="sources-header">
+            <h3>Clinical Citations & Evidence</h3>
+            <p>Verifiable source passages retrieved via dense vector similarity</p>
+          </div>
+          <div id="sourcesList" class="sources-list">
+            <div class="empty-state">
+              No citations retrieved yet.<br />Submit a query to inspect live matched knowledge chunks.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 2: Appointments Management -->
+    <section id="panel-appointments" class="view-panel">
+      <div class="two-col-layout">
+        <!-- Booking Card -->
+        <div class="card">
+          <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.25rem;">Schedule Appointment</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+            Book a clinical consultation with specialist verification
+          </p>
+          <form id="bookApptForm">
+            <div class="form-group">
+              <label for="apptDoctor">Assigned Specialist *</label>
+              <select id="apptDoctor" required>
+                <option value="">-- Choose Specialist --</option>
+              </select>
+            </div>
+            <div class="form-group" id="adminPatientSelectGroup">
+              <label for="apptPatient">Patient Profile *</label>
+              <select id="apptPatient">
+                <option value="">-- Choose Patient --</option>
+              </select>
+            </div>
+            <div class="form-group" id="patientSelfSelectGroup" style="display: none;">
+              <label>Patient *</label>
+              <div id="patientSelfDisplay" style="padding: 0.6rem 0.85rem; background: var(--bg-subtle); border-radius: var(--radius); font-size: 0.85rem;">
+                👤 Booking for your account
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="apptDate">Consultation Date *</label>
+              <input type="date" id="apptDate" required />
+            </div>
+            <div class="form-group">
+              <label for="apptTime">Time Slot *</label>
+              <input type="time" id="apptTime" required />
+            </div>
+            <div class="form-group">
+              <label for="apptNotes">Clinical Reason / Notes</label>
+              <input type="text" id="apptNotes" placeholder="e.g. Routine cardiology follow-up" />
+            </div>
+            <button type="submit" id="bookApptSubmitBtn" class="btn btn-primary btn-block" style="margin-top: 0.5rem;">
+              Confirm & Schedule
+            </button>
+          </form>
+        </div>
+
+        <!-- Scheduled Appointments Table Card -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <div>
+              <h3 style="font-size: 1.05rem; font-weight: 700;">Scheduled Appointments</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Active appointments and patient bookings</p>
+            </div>
+            <button id="refreshApptsBtn" class="btn btn-outline btn-sm">↻ Refresh</button>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Specialist</th>
+                  <th>Patient</th>
+                  <th>Date & Time</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="appointmentsTableBody">
+                <tr><td colspan="6" class="empty-state">Loading scheduled appointments...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 3: Doctors & Clinical Departments Directory -->
+    <section id="panel-directory" class="view-panel">
+      <!-- Admin Management Drawer -->
+      <div id="directoryAdminTools" class="two-col-layout" style="margin-bottom: 2rem; display: none;">
+        <div class="card">
+          <h3 id="departmentFormTitle" style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem;">Add Clinical Department</h3>
+          <form id="departmentForm">
+            <div class="form-group">
+              <label for="departmentNameInput">Department Name *</label>
+              <input type="text" id="departmentNameInput" required maxlength="200" placeholder="e.g. Neurology" />
+            </div>
+            <div class="form-group">
+              <label for="departmentDescriptionInput">Description</label>
+              <textarea id="departmentDescriptionInput" rows="3" placeholder="Department services, diagnostics, and specialties"></textarea>
+            </div>
+            <label class="checkbox-label"><input type="checkbox" id="departmentActiveInput" checked /> Active Department</label>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+              <button type="submit" id="departmentSubmitBtn" class="btn btn-primary">Save Department</button>
+              <button type="button" id="departmentCancelBtn" class="btn btn-outline" style="display: none;">Cancel</button>
+            </div>
+          </form>
+        </div>
+        <div class="card">
+          <h3 id="doctorFormTitle" style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem;">Register Medical Specialist</h3>
+          <form id="doctorForm">
+            <div class="form-group">
+              <label for="doctorNameInput">Specialist Full Name *</label>
+              <input type="text" id="doctorNameInput" required placeholder="e.g. Dr. Sarah Miller" />
+            </div>
+            <div class="form-group">
+              <label for="doctorSpecializationInput">Clinical Specialization *</label>
+              <input type="text" id="doctorSpecializationInput" required minlength="2" maxlength="255" placeholder="e.g. Interventional Cardiology" />
+            </div>
+            <div class="form-group">
+              <label for="doctorDepartmentInput">Department Assignment *</label>
+              <select id="doctorDepartmentInput" required></select>
+            </div>
+            <div class="form-group">
+              <label for="doctorLicenseInput">Medical License ID</label>
+              <input type="text" id="doctorLicenseInput" placeholder="e.g. MD-92041" />
+            </div>
+            <div class="form-group">
+              <label for="doctorEmailInput">Work Email</label>
+              <input type="email" id="doctorEmailInput" placeholder="specialist@pulsepoint.health" />
+            </div>
+            <div class="form-group">
+              <label for="doctorPhoneInput">Direct Phone</label>
+              <input type="tel" id="doctorPhoneInput" placeholder="+1 555 0122" />
+            </div>
+            <label class="checkbox-label"><input type="checkbox" id="doctorActiveInput" checked /> Active Practicing Status</label>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+              <button type="submit" id="doctorSubmitBtn" class="btn btn-primary">Save Specialist</button>
+              <button type="button" id="doctorCancelBtn" class="btn btn-outline" style="display: none;">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Departments Directory Cards Grid -->
+      <div style="margin-bottom: 2.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div>
+            <h3 style="font-size: 1.15rem; font-weight: 700;">Clinical Departments</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Hospital care divisions and operational clinical units</p>
+          </div>
+        </div>
+        <div id="departmentsGrid" class="cards-grid">
+          <div class="empty-state">Loading clinical departments...</div>
+        </div>
+      </div>
+
+      <!-- Doctors Directory Cards Grid -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div>
+            <h3 style="font-size: 1.15rem; font-weight: 700;">Medical Specialists & Physicians</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Practicing consultants and clinical specialists</p>
+          </div>
+        </div>
+        <div id="doctorsGrid" class="cards-grid">
+          <div class="empty-state">Loading medical specialists...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 4: Patient Records Directory (Admin/Staff Only) -->
+    <section id="panel-patients" class="view-panel">
+      <div class="two-col-layout">
+        <!-- Register Patient Form -->
+        <div class="card">
+          <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.25rem;">Register New Patient</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">Create a new verified patient record</p>
+          <form id="addPatientForm">
+            <div class="form-group">
+              <label for="patientName">Full Legal Name *</label>
+              <input type="text" id="patientName" placeholder="e.g. Michael Smith" required />
+            </div>
+            <div class="form-group">
+              <label for="patientDob">Date of Birth *</label>
+              <input type="date" id="patientDob" required />
+            </div>
+            <div class="form-group">
+              <label for="patientGender">Gender</label>
+              <select id="patientGender">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="patientPhone">Contact Phone</label>
+              <input type="tel" id="patientPhone" placeholder="+1 555 0199" />
+            </div>
+            <div class="form-group">
+              <label for="patientEmail">Email Address</label>
+              <input type="email" id="patientEmail" placeholder="patient@example.com" />
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0.5rem;">Create Patient Record</button>
+          </form>
+        </div>
+
+        <!-- Patients Data Table Card -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <div>
+              <h3 style="font-size: 1.05rem; font-weight: 700;">Patient Records Registry</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Confidential clinical patient directory</p>
+            </div>
+            <button id="refreshPatientsBtn" class="btn btn-outline btn-sm">↻ Refresh</button>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Patient Name</th>
+                  <th>Gender</th>
+                  <th>DOB</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="patientsTableBody">
+                <tr><td colspan="7" class="empty-state">Loading patient records...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 5: Knowledge Repository & Ingestion (Admin/Staff Only) -->
+    <section id="panel-knowledge" class="view-panel">
+      <div class="two-col-layout">
+        <!-- Upload Document Form Card -->
+        <div class="card">
+          <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.25rem;">Ingest Clinical Document</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+            Upload `.pdf`, `.docx`, `.txt`, or `.md` files to automatically chunk and embed into the FAISS dense index.
+          </p>
+          <form id="uploadKnowledgeForm">
+            <div class="form-group">
+              <label for="docTitleInput">Document Title</label>
+              <input type="text" id="docTitleInput" placeholder="e.g. Pediatric Department Guidelines 2026" />
+            </div>
+            <div class="form-group">
+              <label for="docFileInput">Document File (.pdf, .docx, .txt, .md) *</label>
+              <input type="file" id="docFileInput" accept=".pdf,.docx,.txt,.md" required />
+            </div>
+            <button type="submit" id="uploadDocSubmitBtn" class="btn btn-primary btn-block" style="margin-top: 0.5rem;">
+              Upload & Ingest Chunks
+            </button>
+          </form>
+        </div>
+
+        <!-- Indexed Documents Table Card -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <div>
+              <h3 style="font-size: 1.05rem; font-weight: 700;">Vector Indexed Documents</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Active knowledge base files serving RAG retrieval</p>
+            </div>
+            <button id="refreshDocsBtn" class="btn btn-outline btn-sm">↻ Refresh</button>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Title</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Indexed At</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="knowledgeDocsTableBody">
+                <tr><td colspan="6" class="empty-state">Loading indexed knowledge documents...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Sign In & Demo Access Modal -->
+  <div id="authModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">
+        Sign In to PulsePoint CareOS
+      </h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Authenticate to access scheduling, clinical directories, and patient management.
+      </p>
+
+      <!-- 1-Click Demo Credentials -->
+      <div class="demo-group">
+        <strong style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">
+          One-Click Instant Role Access
+        </strong>
+        <div class="demo-buttons">
+          <button type="button" id="demoLoginAdminBtn" class="btn btn-outline btn-sm">👑 Admin Role</button>
+          <button type="button" id="demoLoginPatientBtn" class="btn btn-outline btn-sm">👤 Patient Role</button>
+        </div>
+      </div>
+
+      <div class="divider">OR SIGN IN WITH CREDENTIALS</div>
+
+      <form id="signInForm">
+        <div class="form-group">
+          <label for="inputEmail">Email Address</label>
+          <input type="email" id="inputEmail" placeholder="admin@admin.com" required />
+        </div>
+        <div class="form-group">
+          <label for="inputPassword">Password</label>
+          <input type="password" id="inputPassword" placeholder="••••••••" required />
+        </div>
+        <button type="submit" id="submitLoginBtn" class="btn btn-primary btn-block" style="margin-top: 0.5rem;">
+          Sign In
+        </button>
+      </form>
+
+      <div style="margin-top: 1rem; text-align: center;">
+        <button type="button" id="closeAuthModalBtn" class="btn btn-outline btn-sm">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+  <script src="app.js?v=20260915_fix"></script>
+</body>
+</html>
